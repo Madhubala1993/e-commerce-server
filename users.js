@@ -13,7 +13,7 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import { client } from "./index.js";
 import dotenv from "dotenv";
-import { User } from "./userModel.js";
+// import { User } from "./userModel.js";
 
 dotenv.config();
 

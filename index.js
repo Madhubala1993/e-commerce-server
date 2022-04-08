@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import express from "express";
 import { MongoClient } from "mongodb";
 import mongoose from "mongoose";
+import { usersRouter } from "./users.js";
 
 dotenv.config();
 
