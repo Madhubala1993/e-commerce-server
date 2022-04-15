@@ -6,6 +6,7 @@ import {
   getAllUsers,
   getUserById,
   getUserByName,
+  getUserToken,
   UpdateQtyById,
 } from "./helper.js";
 import bcrypt from "bcrypt";
@@ -13,7 +14,7 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import { client } from "./index.js";
 import dotenv from "dotenv";
-// import { User } from "./userModel.js";
+import { ObjectId } from "mongodb";
 
 dotenv.config();
 
@@ -25,11 +26,11 @@ router.post("/forgotPassword", async (req, response) => {
   console.log(username);
 
   const existingUser = await client
-    .db("password")
+    .db("rental")
     .collection("users")
     .findOne({ username: username });
 
-  console.log(existingUser);
+  console.log("existingUser", existingUser);
 
   if (!existingUser) {
     response.status(400).send({ message: "User doesnot exists" });
@@ -46,7 +47,7 @@ router.post("/forgotPassword/:username", async (req, response) => {
   if (+otp === otp_number) {
     const password = await genPassword(new_pwd);
     const passwordUpdate = await client
-      .db("password")
+      .db("rental")
       .collection("users")
       .updateOne({ username: username }, { $set: { password: password } });
     if (passwordUpdate) {
@@ -55,7 +56,10 @@ router.post("/forgotPassword/:username", async (req, response) => {
     }
     console.log("password couldnt update");
     return response.status(400).send("couldnt update");
-  } else response.send({ message: "OTP not matched" });
+  } else {
+    console.log(otp);
+    response.send({ message: "OTP not matched" });
+  }
 });
 
 async function sendMail(mailid, otp_number, req, response) {
@@ -80,6 +84,7 @@ async function sendMail(mailid, otp_number, req, response) {
 
   mailTransporter.sendMail(mailDetails, async (err) => {
     if (err) {
+      console.log(err);
       return response.status(400).send("email is not sent");
     }
 
@@ -95,6 +100,7 @@ router.get("/", async (request, response) => {
   response.send(users);
   console.log(users);
 });
+
 router.post("/signup", async (request, response) => {
   const { username, mailid, password, confirmPwd } = request.body;
   console.log(username, mailid, password, confirmPwd);
@@ -121,11 +127,11 @@ router.post("/signup", async (request, response) => {
   response.send({ message: "Registered successfully" });
   console.log("Registered successfully");
 });
-
+var userFromDB = [];
 router.post("/login", async (request, response) => {
   const { username, password } = request.body;
   console.log(username, password);
-  const userFromDB = await getUserByName(username);
+  userFromDB = await getUserByName(username);
   console.log(userFromDB);
 
   if (!userFromDB) {
@@ -141,8 +147,8 @@ router.post("/login", async (request, response) => {
   }
 
   const token = jwt.sign({ id: userFromDB._id }, process.env.SECRET_KEY);
-  response.send({ message: "Successfull Login", token });
-  console.log("Successfull Login", token);
+  response.send({ message: "Successfull Login", token, userFromDB });
+  console.log("Successfull Login", token, userFromDB);
 });
 
 router.get("/success", async (req, res) => {
